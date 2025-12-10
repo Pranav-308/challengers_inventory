@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock } from 'lucide-react';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const result = await login({ username, password }, rememberMe);
+    // Always use localStorage for persistence (browser will handle password saving)
+    const result = await login({ username: usernameOrEmail, password }, true);
 
-    if (!result.success) {
+    if (result.success) {
+      // Navigate to dashboard - this triggers browser password save prompt
+      navigate('/');
+    } else {
       setError(result.error);
       setLoading(false);
     }
@@ -51,7 +55,7 @@ const Login = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               {error}
@@ -59,18 +63,20 @@ const Login = () => {
           )}
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
+            <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 mb-2">
+              Username or Email
             </label>
             <input
-              id="username"
+              id="usernameOrEmail"
+              name="username"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={usernameOrEmail}
+              onChange={(e) => setUsernameOrEmail(e.target.value)}
               className="input"
-              placeholder="Enter username"
+              placeholder="Enter username or email"
               required
               autoFocus
+              autoComplete="username"
             />
           </div>
 
@@ -80,26 +86,15 @@ const Login = () => {
             </label>
             <input
               id="password"
+              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input"
               placeholder="Enter password"
               required
+              autoComplete="current-password"
             />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              id="rememberMe"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-            />
-            <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-              Remember me
-            </label>
           </div>
 
           <button

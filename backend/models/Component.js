@@ -4,9 +4,15 @@ const componentsCollection = db.collection('components');
 
 // Create component
 const createComponent = async (componentData) => {
-  const docRef = await componentsCollection.add({
+  // Use componentId (like ARD-001) as document ID for better readability
+  const docId = componentData.componentId;
+  
+  await componentsCollection.doc(docId).set({
     ...componentData,
     status: componentData.status || 'available',
+    totalQuantity: componentData.totalQuantity || 1,
+    availableQuantity: componentData.availableQuantity || componentData.totalQuantity || 1,
+    currentBorrowers: componentData.currentBorrowers || [],
     currentBorrower: componentData.currentBorrower || null,
     checkedOutAt: componentData.checkedOutAt || null,
     dueDate: componentData.dueDate || null,
@@ -16,7 +22,7 @@ const createComponent = async (componentData) => {
     createdAt: new Date(),
   });
   
-  const doc = await docRef.get();
+  const doc = await componentsCollection.doc(docId).get();
   return { id: doc.id, ...doc.data() };
 };
 

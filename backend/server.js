@@ -21,6 +21,27 @@ app.use(express.urlencoded({ extended: true }));
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
 
+// Root endpoint - API information
+app.get('/', (req, res) => {
+  res.json({
+    message: '🚀 Challengers Component Tracker API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      auth: '/api/auth/login, /api/auth/register, /api/auth/me',
+      components: '/api/components, /api/components/:id',
+      users: '/api/users, /api/users/:id',
+      dashboard: '/api/dashboard/stats',
+      requests: '/api/requests',
+      health: '/api/health'
+    },
+    frontend: process.env.NODE_ENV === 'production' 
+      ? 'https://challengers-tracker.vercel.app' 
+      : 'http://localhost:3000',
+    documentation: 'See README.md for full API documentation'
+  });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/components', require('./routes/component.routes'));

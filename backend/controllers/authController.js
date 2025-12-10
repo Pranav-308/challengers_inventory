@@ -1,5 +1,33 @@
 const jwt = require('jsonwebtoken');
-const { findUserByUsername, findUserById, createUser, findUserByEmail, comparePassword } = require('../models/User');
+const { findUserByUsername, findUserById, createUser, findUserByEmail, comparePassword, updateUser } = require('../models/User');
+const { createSession, endAllUserSessions } = require('../models/UserSession');
+
+// Helper function to detect browser from user agent
+const getBrowserName = (userAgent) => {
+  if (!userAgent) return 'Unknown';
+  
+  if (userAgent.includes('Edg/')) return 'Edge';
+  if (userAgent.includes('Chrome/') && !userAgent.includes('Edg/')) return 'Chrome';
+  if (userAgent.includes('Firefox/')) return 'Firefox';
+  if (userAgent.includes('Safari/') && !userAgent.includes('Chrome/')) return 'Safari';
+  if (userAgent.includes('Opera/') || userAgent.includes('OPR/')) return 'Opera';
+  if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) return 'Internet Explorer';
+  
+  return 'Unknown';
+};
+
+// Helper function to detect platform from user agent
+const getPlatform = (userAgent) => {
+  if (!userAgent) return 'Unknown';
+  
+  if (userAgent.includes('Windows')) return 'Windows';
+  if (userAgent.includes('Mac OS X')) return 'macOS';
+  if (userAgent.includes('Linux')) return 'Linux';
+  if (userAgent.includes('Android')) return 'Android';
+  if (userAgent.includes('iOS') || userAgent.includes('iPhone') || userAgent.includes('iPad')) return 'iOS';
+  
+  return 'Unknown';
+};
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -13,15 +41,20 @@ const generateToken = (id) => {
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, rememberMe } = req.body;
 
     // Validate input
     if (!username || !password) {
-      return res.status(400).json({ message: 'Please provide username and password' });
+      return res.status(400).json({ message: 'Please provide username/email and password' });
     }
 
-    // Find user
-    const user = await findUserByUsername(username.toLowerCase());
+    // Find user by username or email
+    let user = await findUserByUsername(username.toLowerCase());
+    
+    // If not found by username, try email
+    if (!user) {
+      user = await findUserByEmail(username.toLowerCase());
+    }
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -34,6 +67,28 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Create session in Firebase
+    const sessionData = {
+      userId: user.id,
+      username: user.username,
+      rememberMe: rememberMe || false,
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      deviceInfo: {
+        browser: getBrowserName(req.get('user-agent')),
+        platform: req.get('sec-ch-ua-platform')?.replace(/"/g, '') || getPlatform(req.get('user-agent')),
+      },
+    };
+    
+    const session = await createSession(sessionData);
+    console.log(`✅ Session created for ${user.username} (Remember Me: ${rememberMe})`);
+
+    // Update user's last login time
+    await updateUser(user.id, {
+      lastLogin: new Date(),
+      lastLoginIp: sessionData.ipAddress,
+    });
+
     // Return user data and token
     res.json({
       _id: user.id,
@@ -44,9 +99,11 @@ const login = async (req, res) => {
       role: user.role,
       notificationPreferences: user.notificationPreferences,
       token: generateToken(user.id),
+      sessionId: session.id,
+      rememberMe: rememberMe || false,
     });
   } catch (error) {
-    console.error(error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

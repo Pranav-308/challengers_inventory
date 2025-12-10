@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { getAllComponents } = require('../models/Component');
-const { findAllUsers } = require('../models/User');
+const { getAllUsers } = require('../models/User');
 
 const checkData = async () => {
   try {
@@ -12,7 +12,7 @@ const checkData = async () => {
       console.log('First component:', JSON.stringify(components[0], null, 2));
     }
 
-    const users = await findAllUsers();
+    const users = await getAllUsers();
     console.log(`\n👥 Users found: ${users.length}`);
     if (users.length > 0) {
       console.log('First user:', JSON.stringify({ 

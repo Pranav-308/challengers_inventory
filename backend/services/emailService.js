@@ -12,6 +12,33 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Helper function to safely format dates
+const formatDate = (date) => {
+  if (!date) return 'Not set';
+  
+  // Handle Firestore Timestamp
+  if (date && date.toDate) {
+    date = date.toDate();
+  }
+  
+  // Handle string dates
+  if (typeof date === 'string') {
+    date = new Date(date);
+  }
+  
+  // Check if valid date
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Not set';
+  }
+  
+  return date.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+};
+
 // Send email with retry logic
 const sendEmail = async (to, subject, html, userId, componentId, type) => {
   const logEntry = await createNotificationLog({
@@ -62,7 +89,7 @@ const emailTemplates = {
         <p>You have successfully checked out the following component:</p>
         <div style="background: #f8fafc; padding: 20px; border-radius: 10px; margin: 25px 0; border-left: 5px solid #3b82f6;">
           <p style="margin: 8px 0; font-size: 18px;"><strong>📦 Component:</strong> ${componentName}</p>
-          <p style="margin: 8px 0; font-size: 18px;"><strong>📅 Due Date:</strong> <span style="color: #ef4444; font-weight: bold;">${new Date(dueDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span></p>
+          <p style="margin: 8px 0; font-size: 18px;"><strong>📅 Due Date:</strong> <span style="color: #ef4444; font-weight: bold;">${formatDate(dueDate)}</span></p>
         </div>
         <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
           <p style="margin: 0; color: #92400e;"><strong>⏰ Reminder Schedule:</strong></p>
@@ -134,7 +161,7 @@ const emailTemplates = {
         <p>This is a friendly reminder that your component is due tomorrow:</p>
         <div style="background: #fffbeb; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
           <p style="margin: 5px 0;"><strong>Component:</strong> ${componentName}</p>
-          <p style="margin: 5px 0;"><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+          <p style="margin: 5px 0;"><strong>Due Date:</strong> ${formatDate(dueDate)}</p>
         </div>
         <p>Please return the component on time to avoid overdue notifications.</p>
         <p style="color: #6b7280; font-size: 14px;">- Challengers Team</p>

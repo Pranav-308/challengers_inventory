@@ -9,13 +9,19 @@ const createUser = async (userData) => {
   const salt = await bcrypt.genSalt(10);
   userData.password = await bcrypt.hashSync(userData.password, salt);
   
-  // Add user to Firestore
-  const docRef = await usersCollection.add({
+  // Use username as document ID for better readability
+  const userId = userData.username.toLowerCase();
+  
+  // Add user to Firestore with custom ID
+  await usersCollection.doc(userId).set({
     ...userData,
+    username: userData.username.toLowerCase(),
     createdAt: new Date(),
+    lastLogin: null,
+    lastLoginIp: null,
   });
   
-  const doc = await docRef.get();
+  const doc = await usersCollection.doc(userId).get();
   return { id: doc.id, ...doc.data() };
 };
 
