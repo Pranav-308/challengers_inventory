@@ -1,0 +1,16 @@
+CHALLENGERS LOGO - SAVE INSTRUCTIONS
+=====================================
+
+1. Go back to the chat where you sent the Challengers logo image
+2. Right-click on the logo image (blue gear/circuit/plane design)
+3. Select "Save image as..."
+4. Save it to THIS folder as: logo.png
+5. Refresh your browser at http://localhost:3000
+
+The logo will appear on:
+- Login page
+- Header navigation
+- Register page
+- Forgot Password page
+
+File location: d:\Challengers\frontend\public\logo.png
